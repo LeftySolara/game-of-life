@@ -1,4 +1,5 @@
 #include <ncurses.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define DEAD 0
@@ -18,8 +19,15 @@ int main(int argc, char *argv[])
     int win_width, win_height;
     getmaxyx(stdscr, win_height, win_width);
 
-    int grid[win_height][win_width];
-    memset(grid, 0, sizeof(grid[0][0]) * win_height * win_width);
+    /* create and initialize the grid */
+    int **grid = malloc(win_height * sizeof(int *));
+    for (int i = 0; i < win_height; ++i)
+        grid[i] = malloc(win_width * sizeof(int *));
+
+    for (int i = 0; i < win_height; ++i) {
+        for (int j = 0; j < win_width; ++j)
+            grid[i][j] = 0;
+    }
 
     /* sample oscillator to make sure grid logic is working */
     int width_mid = win_width / 2;
@@ -45,5 +53,6 @@ int main(int argc, char *argv[])
     }
 
     endwin();
+    free(grid);
     return 0;
 }
