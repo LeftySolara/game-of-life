@@ -12,6 +12,8 @@
 WINDOW *create_window(int height, int width, int starty, int startx);
 bool **create_grid(int height, int width);
 
+void print_frame(WINDOW *win, bool **grid);
+
 int main(int argc, char *argv[])
 {
     /* initialize ncurses */
@@ -55,7 +57,8 @@ int main(int argc, char *argv[])
     while(1) {
         if ((ch = getch()) == 'q' || ch == 'Q')
             break;
-        wrefresh(life_window);
+
+        print_frame(life_window, grid);
     }
 
     endwin();
@@ -85,4 +88,22 @@ bool **create_grid(int height, int width)
     }
 
     return grid;
+}
+
+/* write the contents of grid to win and display win to the user */
+void print_frame(WINDOW *win, bool **grid)
+{
+    int height, width;
+    werase(win);
+    getmaxyx(win, height, width);
+
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            if (grid[i][j] == ALIVE)
+                mvwaddch(win, i, j, ALIVE_CHAR);
+            else
+                mvwaddch(win, i, j, DEAD_CHAR);
+        }
+    }
+    wrefresh(win);
 }
