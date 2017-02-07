@@ -1,12 +1,15 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define DEAD 0
 #define ALIVE 1
 
 #define DEAD_CHAR '.'
 #define ALIVE_CHAR '#'
+
+bool **create_grid(int height, int width);
 
 int main(int argc, char *argv[])
 {
@@ -20,14 +23,7 @@ int main(int argc, char *argv[])
     getmaxyx(stdscr, win_height, win_width);
 
     /* create and initialize the grid */
-    int **grid = malloc(win_height * sizeof(int *));
-    for (int i = 0; i < win_height; ++i)
-        grid[i] = malloc(win_width * sizeof(int *));
-
-    for (int i = 0; i < win_height; ++i) {
-        for (int j = 0; j < win_width; ++j)
-            grid[i][j] = 0;
-    }
+    bool **grid = create_grid(win_height, win_width);
 
     /* sample oscillator to make sure grid logic is working */
     int width_mid = win_width / 2;
@@ -55,4 +51,16 @@ int main(int argc, char *argv[])
     endwin();
     free(grid);
     return 0;
+}
+
+bool **create_grid(int height, int width)
+{
+    bool **grid = malloc(height * sizeof(bool *));
+    for (int i = 0; i < height; ++i) {
+        grid[i] = malloc(width * sizeof(bool *));
+        for (int j = 0; j < width; ++j)
+            grid[i][j] = false;
+    }
+
+    return grid;
 }
