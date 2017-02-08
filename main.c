@@ -12,8 +12,9 @@
 WINDOW *create_window(int height, int width, int starty, int startx);
 bool **create_grid(int height, int width);
 
-int count_live_neighbors(bool **grid, int y, int x);
+int count_live_neighbors(bool **grid, int y, int x, int height, int width);
 void print_frame(WINDOW *win, bool **grid);
+void step(bool **grid, bool **buf, int height, int width);
 
 int main(int argc, char *argv[])
 {
@@ -61,6 +62,7 @@ int main(int argc, char *argv[])
             break;
 
         print_frame(life_window, grid);
+        step(grid, buf, height, width);
     }
 
     endwin();
@@ -94,7 +96,7 @@ bool **create_grid(int height, int width)
 
 /* check the value of the eight cells adjacent to the one at (y,x) and return
  * the number of live cells */
-int count_live_neighbors(bool **grid, int y, int x)
+int count_live_neighbors(bool **grid, int y, int x, int height, int width)
 {
     int live_neighbors = 0;
 
@@ -102,7 +104,10 @@ int count_live_neighbors(bool **grid, int y, int x)
         for (int col = x-1; col <= x+1; ++col) {
             if (row == y && col == x)   /* ignore the given cell */
                 continue;
-            if (grid[row][col] == ALIVE)
+
+            /* we need to add the height/width and divide to account for cells
+             * at the edge of the grid and get a "wrapping" effect */
+            if (grid[(row + height) % height][(col + width) % width] == ALIVE)
                 ++live_neighbors;
         }
     }
@@ -125,4 +130,26 @@ void print_frame(WINDOW *win, bool **grid)
         }
     }
     wrefresh(win);
+}
+
+void step(bool **grid, bool **buf, int height, int width)
+{
+    int live_neighbors;
+    bool cell;
+
+    for (int row = 0; row < height; ++row) {
+        for (int col = 0; col < width; ++col) {
+            cell = grid[row][col];
+            live_neighbors = count_live_neighbors(grid, row, col, height, width);
+
+            if (cell == ALIVE && live_neighbors < 2)
+                buf[row][col] = DEAD;
+            else if (cell == ALIVE && (live_neighbors == 2 || live_neighbors == 3))
+                buf[row][col] = ALIVE;
+            else if (cell == ALIVE && live_neighbors > 3)
+                buf[row][col] = DEAD;
+            else if (cell == DEAD && live_neighbors == 3)
+                buf[row][col] = ALIVE;
+        }
+    }
 }
