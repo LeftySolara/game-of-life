@@ -12,6 +12,7 @@
 WINDOW *create_window(int height, int width, int starty, int startx);
 bool **create_grid(int height, int width);
 
+int count_live_neighbors(bool **grid, int y, int x);
 void print_frame(WINDOW *win, bool **grid);
 
 int main(int argc, char *argv[])
@@ -53,6 +54,7 @@ int main(int argc, char *argv[])
         }
     }
 
+    /* main loop */
     int ch;
     while(1) {
         if ((ch = getch()) == 'q' || ch == 'Q')
@@ -88,6 +90,23 @@ bool **create_grid(int height, int width)
     }
 
     return grid;
+}
+
+/* check the value of the eight cells adjacent to the one at (y,x) and return
+ * the number of live cells */
+int count_live_neighbors(bool **grid, int y, int x)
+{
+    int live_neighbors = 0;
+
+    for (int row = y-1; row <= y+1; ++row) {
+        for (int col = x-1; col <= x+1; ++col) {
+            if (row == y && col == x)   /* ignore the given cell */
+                continue;
+            if (grid[row][col] == ALIVE)
+                ++live_neighbors;
+        }
+    }
+    return live_neighbors;
 }
 
 /* write the contents of grid to win and display win to the user */
