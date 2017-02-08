@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #define DEAD 0
 #define ALIVE 1
@@ -15,6 +16,7 @@ bool **create_grid(int height, int width);
 int count_live_neighbors(bool **grid, int y, int x, int height, int width);
 void print_frame(WINDOW *win, bool **grid);
 void step(bool **grid, bool **buf, int height, int width);
+void buf_swap(bool **grid, bool **buf, int height, int width);
 
 int main(int argc, char *argv[])
 {
@@ -63,6 +65,8 @@ int main(int argc, char *argv[])
 
         print_frame(life_window, grid);
         step(grid, buf, height, width);
+        buf_swap(grid, buf, height, width);
+        sleep(1);
     }
 
     endwin();
@@ -150,6 +154,17 @@ void step(bool **grid, bool **buf, int height, int width)
                 buf[row][col] = DEAD;
             else if (cell == DEAD && live_neighbors == 3)
                 buf[row][col] = ALIVE;
+        }
+    }
+}
+
+/* copy the contents of buf into grid and clear buf */
+void buf_swap(bool **grid, bool **buf, int height, int width)
+{
+    for (int row = 0; row < height; ++row) {
+        for (int col = 0; col < width; ++col) {
+            grid[row][col] = buf[row][col];
+            buf[row][col] = DEAD;
         }
     }
 }
