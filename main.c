@@ -28,32 +28,32 @@ int main(int argc, char *argv[])
     nodelay(stdscr, 1);
 
     // TODO: allow user to choose size of display window
-    int height = 50;
-    int width = 50;
+    int main_window_height = 50;
+    int main_window_width = 50;
 
-    int starty = (getmaxy(stdscr) - height) / 2;
-    int startx = (getmaxx(stdscr) - width) / 2;
+    /* starting coordinates for the display window */
+    int starty = (getmaxy(stdscr) - main_window_height) / 2;
+    int startx = (getmaxx(stdscr) - main_window_width) / 2;
 
-    WINDOW *life_window = create_window(height, width, starty, startx);
+    WINDOW *main_window = create_window(main_window_height, main_window_width, starty, startx);
 
-    /* create and initialize the grid */
-    bool **grid = create_grid(height, width);
-    bool **buf = create_grid(height, width);
+    bool **grid = create_grid(main_window_height, main_window_width);
+    bool **buf = create_grid(main_window_height, main_window_width);
 
     /* sample oscillator to make sure grid logic is working */
-    int width_mid = width / 2;
-    int height_mid = height / 2;
+    int width_mid = main_window_width / 2;
+    int height_mid = main_window_height / 2;
 
     grid[height_mid][width_mid-1] = ALIVE;
     grid[height_mid][width_mid] = ALIVE;
     grid[height_mid][width_mid+1] = ALIVE;
 
-    for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
-            if (grid[i][j] == DEAD)
-                mvwaddch(life_window, i, j, DEAD_CHAR);
+    for (int row = 0; row < main_window_height; ++row) {
+        for (int col = 0; col < main_window_width; ++col) {
+            if (grid[row][col] == DEAD)
+                mvwaddch(main_window, row, col, DEAD_CHAR);
             else
-                mvwaddch(life_window, i, j, ALIVE_CHAR);
+                mvwaddch(main_window, row, col, ALIVE_CHAR);
         }
     }
 
@@ -62,21 +62,19 @@ int main(int argc, char *argv[])
     while(1) {
         if ((ch = getch()) == 'q' || ch == 'Q')
             break;
-
-        print_frame(life_window, grid);
-        step(grid, buf, height, width);
-        buf_swap(grid, buf, height, width);
+        print_frame(main_window, grid);
+        step(grid, buf, main_window_height, main_window_width);
+        buf_swap(grid, buf, main_window_height, main_window_width);
         sleep(1);
     }
 
     endwin();
-    delwin(life_window);
+    delwin(main_window);
     free(grid);
     free(buf);
-    return 0;
 }
 
-/* create a new curses window centered on stdscr */
+/* create a new ncurses window, display it, and return a pointer to it */
 WINDOW *create_window(int height, int width, int starty, int startx)
 {
     WINDOW * win = newwin(height, width, starty, startx);
@@ -85,7 +83,7 @@ WINDOW *create_window(int height, int width, int starty, int startx)
     return win;
 }
 
-/* allocate memory for a two-dimensional array to be used as a grid */
+/* allocate memory for a two-dimensional array and return a double pointer to it */
 bool **create_grid(int height, int width)
 {
     bool **grid = malloc(height * sizeof(bool *));
