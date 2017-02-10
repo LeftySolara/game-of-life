@@ -25,8 +25,14 @@ void buf_swap(bool **grid, bool **buf, int height, int width);
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
-        printf("Error: not enough arguments");
+        printf("Error: not enough arguments\n");
         exit(1);
+    }
+
+    FILE *init_file = fopen(argv[1], "r");
+    if (init_file == NULL) {
+        printf("Error opening input file\n");
+        exit(2);
     }
 
     /* initialize ncurses */
@@ -36,9 +42,8 @@ int main(int argc, char *argv[])
     curs_set(0);
     nodelay(stdscr, 1);
 
-    int main_window_height, main_window_width, steps;
-    FILE *init_file = fopen(argv[1], "r");
     char dimensions[MAX_WIDTH];
+    int main_window_height, main_window_width, steps;
 
     fgets(dimensions, MAX_WIDTH, init_file);
     dimensions[strlen(dimensions)-1] = '\0';  /* remove newline left by fgets */
@@ -49,7 +54,6 @@ int main(int argc, char *argv[])
     int startx = (getmaxx(stdscr) - main_window_width) / 2;
 
     WINDOW *main_window = create_window(main_window_height, main_window_width, starty, startx);
-
     bool **grid = create_grid(main_window_height, main_window_width);
     bool **buf = create_grid(main_window_height, main_window_width);
 
