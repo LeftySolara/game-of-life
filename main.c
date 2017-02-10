@@ -3,15 +3,19 @@
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <time.h>
 
 #define DEAD 0
 #define ALIVE 1
 
-#define DEAD_CHAR '.'
+#define DEAD_CHAR ' '
 #define ALIVE_CHAR '#'
+
+#define MAX_WIDTH 1000
 
 WINDOW *create_window(int height, int width, int starty, int startx);
 bool **create_grid(int height, int width);
+void set_initial_state(bool **grid, int height, int width, FILE *fp);
 
 int count_live_neighbors(bool **grid, int y, int x, int height, int width);
 void print_frame(WINDOW *win, bool **grid);
@@ -20,6 +24,11 @@ void buf_swap(bool **grid, bool **buf, int height, int width);
 
 int main(int argc, char *argv[])
 {
+    if (argc < 2) {
+        printf("Error: not enough arguments");
+        exit(1);
+    }
+
     /* initialize ncurses */
     initscr();
     cbreak();
@@ -27,9 +36,13 @@ int main(int argc, char *argv[])
     curs_set(0);
     nodelay(stdscr, 1);
 
-    // TODO: allow user to choose size of display window
-    int main_window_height = 50;
-    int main_window_width = 50;
+    int main_window_height, main_window_width, steps;
+    FILE *init_file = fopen(argv[1], "r");
+    char dimensions[MAX_WIDTH];
+
+    fgets(dimensions, MAX_WIDTH, init_file);
+    dimensions[strlen(dimensions)-1] = '\0';  /* remove newline left by fgets */
+    sscanf(dimensions, "%d %d %d", &steps, &main_window_width, &main_window_height);
 
     /* starting coordinates for the display window */
     int starty = (getmaxy(stdscr) - main_window_height) / 2;
@@ -40,32 +53,19 @@ int main(int argc, char *argv[])
     bool **grid = create_grid(main_window_height, main_window_width);
     bool **buf = create_grid(main_window_height, main_window_width);
 
-    /* sample oscillator to make sure grid logic is working */
-    int width_mid = main_window_width / 2;
-    int height_mid = main_window_height / 2;
-
-    grid[height_mid][width_mid-1] = ALIVE;
-    grid[height_mid][width_mid] = ALIVE;
-    grid[height_mid][width_mid+1] = ALIVE;
-
-    for (int row = 0; row < main_window_height; ++row) {
-        for (int col = 0; col < main_window_width; ++col) {
-            if (grid[row][col] == DEAD)
-                mvwaddch(main_window, row, col, DEAD_CHAR);
-            else
-                mvwaddch(main_window, row, col, ALIVE_CHAR);
-        }
-    }
+    set_initial_state(grid, main_window_height, main_window_width, init_file);
+    fclose(init_file);
 
     /* main loop */
     int ch;
+    struct timespec tm = {0, 200000000L};
     while(1) {
         if ((ch = getch()) == 'q' || ch == 'Q')
             break;
         print_frame(main_window, grid);
         step(grid, buf, main_window_height, main_window_width);
         buf_swap(grid, buf, main_window_height, main_window_width);
-        sleep(1);
+        nanosleep(&tm, NULL);
     }
 
     endwin();
@@ -94,6 +94,25 @@ bool **create_grid(int height, int width)
     }
 
     return grid;
+}
+
+/* read fp and set grid to match */
+void set_initial_state(bool **grid, int height, int width, FILE *fp)
+{
+    char line[width];
+
+    /* if formatted properly, the grid should start at line 3 in the input file,
+     * so we'll skip the first two lines */
+    rewind(fp);
+    fgets(line, MAX_WIDTH, fp);
+    fgets(line, MAX_WIDTH, fp);
+
+    int row = 0;
+    while (row < height && fgets(line, MAX_WIDTH, fp)) {
+        for (int col = 0; col < width; ++col)
+            line[col] == ALIVE_CHAR ? (grid[row][col] = ALIVE) : (grid[row][col] = DEAD);
+        ++row;
+    }
 }
 
 /* check the value of the eight cells adjacent to the one at (y,x) and return
